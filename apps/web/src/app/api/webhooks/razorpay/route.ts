@@ -1,1 +1,1 @@
-// Razorpay webhook — Step 12
+export async function POST() { return new Response("Razorpay webhook — Step 12"); }

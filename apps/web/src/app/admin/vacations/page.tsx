@@ -1,1 +1,1 @@
-// Admin vacations — Step 10
+export default function AdminVacationsPage() { return <div>Vacations — Step 10</div>; }

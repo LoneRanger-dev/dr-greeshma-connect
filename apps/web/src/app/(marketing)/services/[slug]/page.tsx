@@ -1,1 +1,1 @@
-// Service detail — Step 4
+export default function ServiceDetailPage() { return <div>Service — Step 4</div>; }

@@ -1,1 +1,1 @@
-// About page — Step 4
+export default function AboutPage() { return <div>About — Step 4</div>; }

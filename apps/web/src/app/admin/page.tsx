@@ -1,1 +1,1 @@
-// Admin dashboard — Step 10
+export default function AdminPage() { return <div>Admin Dashboard — Step 10</div>; }

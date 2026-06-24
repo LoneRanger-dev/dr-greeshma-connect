@@ -1,1 +1,1 @@
-// Booking wizard — Step 8
+export default function BookPage() { return <div>Book — Step 8</div>; }

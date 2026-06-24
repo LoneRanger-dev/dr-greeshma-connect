@@ -1,1 +1,1 @@
-// Admin appointments — Step 10
+export default function AdminAppointmentsPage() { return <div>Appointments — Step 10</div>; }

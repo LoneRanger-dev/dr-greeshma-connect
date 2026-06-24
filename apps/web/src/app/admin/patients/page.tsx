@@ -1,1 +1,1 @@
-// Admin patients — Step 10
+export default function AdminPatientsPage() { return <div>Patients — Step 10</div>; }

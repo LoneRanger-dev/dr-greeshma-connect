@@ -1,1 +1,1 @@
-// Admin availability — Step 10
+export default function AdminAvailabilityPage() { return <div>Availability — Step 10</div>; }

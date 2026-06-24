@@ -1,22 +1,32 @@
 "use client";
 
-import { motion, type HTMLMotionProps } from "framer-motion";
+import { motion } from "framer-motion";
+import NextLink from "next/link";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
-interface Ripple {
-  id: number;
-  x: number;
-  y: number;
-}
+interface Ripple { id: number; x: number; y: number }
 
-type MagicButtonProps = {
+type BaseProps = {
   variant?: "primary" | "outline" | "ghost";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
-} & Omit<HTMLMotionProps<"button">, "children"> & {
   children: React.ReactNode;
+  className?: string;
 };
+
+type ButtonProps = BaseProps &
+  Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children">;
+
+type LinkProps = BaseProps & {
+  href: string;
+  target?: string;
+  rel?: string;
+};
+
+export type MagicButtonProps = ButtonProps | LinkProps;
+
+const MotionLink = motion(NextLink);
 
 const variantStyles = {
   primary: [
@@ -43,51 +53,22 @@ const sizeStyles = {
   lg: "h-14 px-8 text-lg rounded-2xl",
 };
 
-export function MagicButton({
+const baseClass =
+  "relative inline-flex cursor-pointer select-none items-center justify-center overflow-hidden font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+
+function Internals({
+  variant,
+  isLoading,
   children,
-  className,
-  variant = "primary",
-  size = "md",
-  isLoading = false,
-  disabled,
-  onClick,
-  ...props
-}: MagicButtonProps) {
-  const [ripples, setRipples] = useState<Ripple[]>([]);
-  const ref = useRef<HTMLButtonElement>(null);
-
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const btn = ref.current;
-    if (btn) {
-      const rect = btn.getBoundingClientRect();
-      const id = Date.now();
-      setRipples((prev) => [...prev, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
-      setTimeout(() => setRipples((prev) => prev.filter((r) => r.id !== id)), 700);
-    }
-    onClick?.(e);
-  };
-
+  ripples,
+}: {
+  variant: "primary" | "outline" | "ghost";
+  isLoading?: boolean;
+  children: React.ReactNode;
+  ripples: Ripple[];
+}) {
   return (
-    <motion.button
-      ref={ref}
-      whileTap={disabled || isLoading ? {} : { scale: 0.97 }}
-      whileHover="hover"
-      initial="rest"
-      className={cn(
-        "relative inline-flex cursor-pointer select-none items-center justify-center overflow-hidden",
-        "font-semibold transition-all duration-300",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-        "disabled:cursor-not-allowed disabled:opacity-50",
-        variantStyles[variant],
-        sizeStyles[size],
-        className,
-      )}
-      disabled={disabled || isLoading}
-      aria-busy={isLoading}
-      onClick={handleClick}
-      {...props}
-    >
-      {/* Animated sheen sweep */}
+    <>
       {variant === "primary" && (
         <motion.span
           aria-hidden
@@ -103,32 +84,15 @@ export function MagicButton({
           }}
         />
       )}
-
-      {/* Content */}
       <span className="relative z-10 flex items-center justify-center gap-2">
         {isLoading && (
-          <svg
-            className="h-4 w-4 animate-spin"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden
-          >
-            <circle
-              cx="12" cy="12" r="10"
-              stroke="currentColor" strokeWidth="4"
-              className="opacity-25"
-            />
-            <path
-              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              fill="currentColor"
-              className="opacity-75"
-            />
+          <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" className="opacity-25" />
+            <path d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" fill="currentColor" className="opacity-75" />
           </svg>
         )}
         {children}
       </span>
-
-      {/* Ripple effects */}
       {ripples.map(({ id, x, y }) => (
         <motion.span
           key={id}
@@ -140,6 +104,75 @@ export function MagicButton({
           transition={{ duration: 0.7, ease: [0.19, 1, 0.22, 1] }}
         />
       ))}
+    </>
+  );
+}
+
+export function MagicButton(props: MagicButtonProps) {
+  const {
+    children,
+    className,
+    variant = "primary",
+    size = "md",
+    isLoading = false,
+  } = props;
+
+  const [ripples, setRipples] = useState<Ripple[]>([]);
+  const ref = useRef<HTMLElement>(null);
+
+  function addRipple(e: React.MouseEvent) {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const id = Date.now();
+    setRipples((p) => [...p, { id, x: e.clientX - rect.left, y: e.clientY - rect.top }]);
+    setTimeout(() => setRipples((p) => p.filter((r) => r.id !== id)), 700);
+  }
+
+  const cls = cn(baseClass, variantStyles[variant], sizeStyles[size], className);
+  const motionProps = {
+    whileTap: isLoading ? {} : { scale: 0.97 },
+    whileHover: "hover",
+    initial: "rest",
+  } as const;
+
+  if ("href" in props) {
+    const { href, target, rel } = props;
+    return (
+      <MotionLink
+        href={href}
+        target={target}
+        rel={rel}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ref={ref as any}
+        className={cls}
+        onClick={addRipple}
+        {...motionProps}
+      >
+        <Internals variant={variant} isLoading={isLoading} ripples={ripples}>
+          {children}
+        </Internals>
+      </MotionLink>
+    );
+  }
+
+  // Destructure all custom props so they never reach the DOM
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { disabled, onClick, variant: _v, size: _s, isLoading: _l, children: _c, className: _cls, ...rest } = props as ButtonProps;
+  return (
+    <motion.button
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ref={ref as any}
+      className={cls}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading}
+      onClick={(e) => { addRipple(e); onClick?.(e); }}
+      {...motionProps}
+      {...(rest as object)}
+    >
+      <Internals variant={variant} isLoading={isLoading} ripples={ripples}>
+        {children}
+      </Internals>
     </motion.button>
   );
 }

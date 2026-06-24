@@ -1,18 +1,37 @@
+import type { Metadata } from "next";
+import { Navbar } from "@/components/sections/Navbar";
+import { Hero } from "@/components/sections/Hero";
+import { TrustStrip } from "@/components/sections/TrustStrip";
+import { ServicesPreview } from "@/components/sections/ServicesPreview";
+import { WhyChoose } from "@/components/sections/WhyChoose";
+import { Testimonials } from "@/components/sections/Testimonials";
+import { CTABand } from "@/components/sections/CTABand";
+import { Footer } from "@/components/sections/Footer";
+
+export const metadata: Metadata = {
+  title: "Dr. Greeshma Connect | Smart Telehealth Booking",
+  description:
+    "Book a secure video consultation with Dr. Greeshma Gopinath, OB-GYN specialist. Expert care for pregnancy, PCOS, infertility, and gynaecology from the comfort of your home.",
+};
+
 export default function HomePage() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
-      <h1 className="font-display text-5xl font-bold tracking-tight">
-        Dr. Greeshma Connect
-      </h1>
-      <p className="max-w-md text-lg text-muted-foreground">
-        Smart Telehealth Booking Platform — coming in Step 3
-      </p>
-      <a
-        href="/book"
-        className="inline-flex items-center rounded-md bg-primary px-6 py-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-      >
-        Book Appointment
-      </a>
-    </main>
+    <>
+      <Navbar />
+
+      <Hero />
+
+      <TrustStrip />
+
+      <ServicesPreview />
+
+      <WhyChoose />
+
+      <Testimonials />
+
+      <CTABand />
+
+      <Footer />
+    </>
   );
 }

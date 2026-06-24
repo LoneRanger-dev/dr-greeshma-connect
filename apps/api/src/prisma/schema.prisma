@@ -72,11 +72,12 @@ model User {
 // ─────────────────────────────────────────────────────────────
 
 model DoctorProfile {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  bio               String?
-  specialties       String[]
-  consultFeeDefault Int      @default(0)
+  id                 String    @id @default(cuid())
+  userId             String    @unique
+  bio                String?
+  specialties        String[]
+  consultFeeDefault  Int       @default(0)
+  googleRefreshToken String?   // stored after OAuth consent
 
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   availabilityRules AvailabilityRule[]

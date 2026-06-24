@@ -2,6 +2,9 @@
   "name": "api",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "prisma": {
     "schema": "src/prisma/schema.prisma",
     "seed": "ts-node --project tsconfig.json src/prisma/seed.ts"
@@ -17,6 +20,7 @@
     "db:generate": "prisma generate --schema src/prisma/schema.prisma",
     "db:migrate": "prisma migrate dev --schema src/prisma/schema.prisma",
     "db:push": "prisma db push --schema src/prisma/schema.prisma",
+    "db:deploy": "prisma migrate deploy --schema src/prisma/schema.prisma",
     "db:studio": "prisma studio --schema src/prisma/schema.prisma",
     "clean": "rm -rf dist"
   },
@@ -29,10 +33,13 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.4.1",
+    "googleapis": "^173.0.0",
     "helmet": "^7.1.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
     "node-cron": "^3.0.3",
+    "nodemailer": "^9.0.1",
+    "razorpay": "^2.9.6",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -44,6 +51,7 @@
     "@types/morgan": "^1.9.9",
     "@types/node": "^22.7.7",
     "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^8.0.1",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^8.8.1",
     "@typescript-eslint/parser": "^8.8.1",

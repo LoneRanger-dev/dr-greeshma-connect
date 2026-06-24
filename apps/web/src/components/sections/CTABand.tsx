@@ -39,10 +39,13 @@ export function CTABand() {
               </p>
 
               <div className="flex flex-wrap justify-center gap-4 pt-2">
-                <MagicButton href="/book" size="lg">
-                  Book Your Consultation
-                  <ArrowRight className="h-5 w-5" aria-hidden />
-                </MagicButton>
+                {/* Gradient border wrapper — the ::before rotates the brand colours */}
+                <div className="animate-gradient-border rounded-2xl">
+                  <MagicButton href="/book" size="lg">
+                    Book Your Consultation
+                    <ArrowRight className="h-5 w-5" aria-hidden />
+                  </MagicButton>
+                </div>
                 <MagicButton href="/services" variant="outline" size="lg" className="border-white/30 text-white hover:bg-white/10">
                   Learn About Services
                 </MagicButton>

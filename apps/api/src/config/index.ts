@@ -38,12 +38,14 @@ export const config = {
   },
 
   google: {
-    clientId: optional("GOOGLE_CLIENT_ID", ""),
-    clientSecret: optional("GOOGLE_CLIENT_SECRET", ""),
-    calendarId: optional("GOOGLE_CALENDAR_ID", "primary"),
-    serviceAccountEmail: optional("GOOGLE_SERVICE_ACCOUNT_EMAIL", ""),
+    clientId:                 optional("GOOGLE_CLIENT_ID", ""),
+    clientSecret:             optional("GOOGLE_CLIENT_SECRET", ""),
+    calendarId:               optional("GOOGLE_CALENDAR_ID", "primary"),
+    serviceAccountEmail:      optional("GOOGLE_SERVICE_ACCOUNT_EMAIL", ""),
     serviceAccountPrivateKey: optional("GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY", "").replace(/\\n/g, "\n"),
-    refreshToken: optional("GOOGLE_REFRESH_TOKEN", ""),
+    refreshToken:             optional("GOOGLE_REFRESH_TOKEN", ""),
+    redirectUri:              optional("GOOGLE_REDIRECT_URI", "http://localhost:4000/google/callback"),
+    oauthSuccessUrl:          optional("GOOGLE_OAUTH_SUCCESS_URL", "http://localhost:3006/admin/availability"),
   },
 
   smtp: {

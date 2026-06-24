@@ -45,3 +45,24 @@ export async function cancelHandler(req: Request, res: Response, next: NextFunct
     res.json({ data: appointment });
   } catch (err) { next(err); }
 }
+
+export async function confirmHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const appointment = await svc.confirmAppointment(req.params.id, req.user!.sub);
+    res.json({ data: appointment });
+  } catch (err) { next(err); }
+}
+
+export async function completeHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const appointment = await svc.completeAppointment(req.params.id, req.user!.sub);
+    res.json({ data: appointment });
+  } catch (err) { next(err); }
+}
+
+export async function noShowHandler(req: Request, res: Response, next: NextFunction) {
+  try {
+    const appointment = await svc.noShowAppointment(req.params.id, req.user!.sub);
+    res.json({ data: appointment });
+  } catch (err) { next(err); }
+}

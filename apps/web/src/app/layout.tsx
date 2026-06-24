@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Sora } from "next/font/google";
 import "@/styles/globals.css";
 import { Providers } from "@/components/providers";
+import { Toaster } from "@/components/ui/sonner";
+import { CursorGlow } from "@/components/ui/cursor-glow";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -75,9 +77,11 @@ export default function RootLayout({
         </a>
 
         <Providers>
+          <CursorGlow />
           <div id="main-content" role="main">
             {children}
           </div>
+          <Toaster richColors position="top-center" />
         </Providers>
       </body>
     </html>

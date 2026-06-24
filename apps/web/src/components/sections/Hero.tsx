@@ -123,18 +123,20 @@ export function Hero() {
         </div>
       </div>
 
-      {/* Scroll hint */}
-      <motion.div
-        className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1, y: [0, 8, 0] }}
-        transition={{ delay: 1.5, duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
-        aria-hidden
-      >
-        <div className="h-8 w-5 rounded-full border-2 border-foreground/25 p-1">
-          <div className="h-1.5 w-1.5 rounded-full bg-teal" />
-        </div>
-      </motion.div>
+      {/* Scroll hint — hidden under reduced motion to avoid infinite loop at duration:0 */}
+      {!reduced && (
+        <motion.div
+          className="absolute bottom-8 left-1/2 -translate-x-1/2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, y: [0, 8, 0] }}
+          transition={{ delay: 1.5, duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          aria-hidden
+        >
+          <div className="h-8 w-5 rounded-full border-2 border-foreground/25 p-1">
+            <div className="h-1.5 w-1.5 rounded-full bg-teal" />
+          </div>
+        </motion.div>
+      )}
     </AuroraBackground>
   );
 }

@@ -4,11 +4,78 @@ import { AppError } from "../../middleware/errorHandler";
 import { getDaySlots } from "../slots/slots.service";
 import { getISTDateString } from "../../utils/istUtils";
 import { writeAuditLog } from "../../middleware/auditLog";
+import { logger } from "../../utils/logger";
+import * as googleSvc from "../google/google.service";
+import { sendNotification } from "../notifications/notifications.service";
 import type {
   BookAppointmentInput,
   RescheduleAppointmentInput,
   AppointmentFilterInput,
 } from "@dr-greeshma/shared";
+
+// ── Google Meet helpers ───────────────────────────────────────────────────────
+// All Google calls are fire-and-forget — they never block or throw to the caller.
+
+async function attachMeetLink(appointmentId: string): Promise<void> {
+  const appt = await prisma.appointment.findUnique({
+    where:  { id: appointmentId },
+    select: {
+      id:           true,
+      startsAt:     true,
+      endsAt:       true,
+      patientEmail: true,
+      patientName:  true,
+      service:      { select: { title: true } },
+      doctor:       { select: { id: true, user: { select: { email: true } } } },
+    },
+  });
+  if (!appt) return;
+
+  const result = await googleSvc.createCalendarEvent({
+    appointmentId:   appt.id,
+    doctorProfileId: appt.doctor.id,
+    doctorEmail:     appt.doctor.user.email,
+    patientEmail:    appt.patientEmail ?? "",
+    patientName:     appt.patientName  ?? "Patient",
+    serviceName:     appt.service.title,
+    startsAt:        appt.startsAt,
+    endsAt:          appt.endsAt,
+  });
+
+  if (!result) return;
+
+  await prisma.appointment.update({
+    where: { id: appointmentId },
+    data:  { meetLink: result.meetLink, googleEventId: result.eventId },
+  }).catch((err) => logger.warn("Failed to save meetLink on appointment:", err));
+}
+
+async function updateMeetTime(appointment: {
+  id:            string;
+  doctorId:      string;
+  googleEventId: string | null;
+  startsAt:      Date;
+  endsAt:        Date;
+}): Promise<void> {
+  if (!appointment.googleEventId) return;
+  await googleSvc.patchCalendarEvent({
+    doctorProfileId: appointment.doctorId,
+    googleEventId:   appointment.googleEventId,
+    startsAt:        appointment.startsAt,
+    endsAt:          appointment.endsAt,
+  });
+}
+
+async function removeMeetEvent(appointment: {
+  doctorId:      string;
+  googleEventId: string | null;
+}): Promise<void> {
+  if (!appointment.googleEventId) return;
+  await googleSvc.deleteCalendarEvent({
+    doctorProfileId: appointment.doctorId,
+    googleEventId:   appointment.googleEventId,
+  });
+}
 
 // ── Shape returned to callers ────────────────────────────────────────────────
 
@@ -154,6 +221,16 @@ export async function rescheduleAppointment(
       metadata: { from: existing!.startsAt.toISOString(), to: input.startsAt },
     });
 
+    // Fire-and-forget: patch Google event + send reschedule notification
+    updateMeetTime({
+      id,
+      doctorId:      updated.doctor.id,
+      googleEventId: updated.googleEventId,
+      startsAt:      newStartsAt,
+      endsAt:        newEndsAt,
+    }).catch((err) => logger.warn("updateMeetTime failed:", err));
+    sendNotification("BOOKING_RESCHEDULED", id).catch((err) => logger.warn("BOOKING_RESCHEDULED notify failed:", err));
+
     return updated;
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002")
@@ -198,6 +275,13 @@ export async function cancelAppointment(
     entityId: id,
     metadata: { reason },
   });
+
+  // Fire-and-forget: delete Google event + send cancellation notification
+  removeMeetEvent({
+    doctorId:      existing!.doctor.id,
+    googleEventId: existing!.googleEventId,
+  }).catch((err) => logger.warn("removeMeetEvent failed:", err));
+  sendNotification("BOOKING_CANCELLED", id).catch((err) => logger.warn("BOOKING_CANCELLED notify failed:", err));
 
   return updated;
 }
@@ -262,4 +346,59 @@ export async function getAppointment(id: string, userId: string, role: string) {
 
   assertCanAccess(appointment, userId, role);
   return appointment;
+}
+
+// ── Doctor status transitions ─────────────────────────────────────────────────
+
+export async function confirmAppointment(id: string, actorId: string) {
+  const existing = await prisma.appointment.findUnique({ where: { id }, select: { status: true } });
+  if (!existing) throw new AppError(404, "Appointment not found", "NOT_FOUND");
+  if (!["PENDING", "RESCHEDULED"].includes(existing.status))
+    throw new AppError(400, "Only PENDING or RESCHEDULED appointments can be confirmed", "INVALID_STATUS");
+
+  const updated = await prisma.appointment.update({
+    where:  { id },
+    data:   { status: "CONFIRMED" },
+    select: APPOINTMENT_SELECT,
+  });
+
+  await writeAuditLog({ actorId, action: "APPOINTMENT_CONFIRMED", entity: "Appointment", entityId: id, metadata: {} });
+
+  // Fire-and-forget: Google Calendar + confirmation notification
+  attachMeetLink(id).catch((err) => logger.warn("attachMeetLink failed:", err));
+  sendNotification("BOOKING_CONFIRMED", id).catch((err) => logger.warn("BOOKING_CONFIRMED notify failed:", err));
+
+  return updated;
+}
+
+export async function completeAppointment(id: string, actorId: string) {
+  const existing = await prisma.appointment.findUnique({ where: { id }, select: { status: true } });
+  if (!existing) throw new AppError(404, "Appointment not found", "NOT_FOUND");
+  if (existing.status !== "CONFIRMED")
+    throw new AppError(400, "Only CONFIRMED appointments can be marked completed", "INVALID_STATUS");
+
+  const updated = await prisma.appointment.update({
+    where:  { id },
+    data:   { status: "COMPLETED" },
+    select: APPOINTMENT_SELECT,
+  });
+
+  await writeAuditLog({ actorId, action: "APPOINTMENT_COMPLETED", entity: "Appointment", entityId: id, metadata: {} });
+  return updated;
+}
+
+export async function noShowAppointment(id: string, actorId: string) {
+  const existing = await prisma.appointment.findUnique({ where: { id }, select: { status: true } });
+  if (!existing) throw new AppError(404, "Appointment not found", "NOT_FOUND");
+  if (existing.status !== "CONFIRMED")
+    throw new AppError(400, "Only CONFIRMED appointments can be marked no-show", "INVALID_STATUS");
+
+  const updated = await prisma.appointment.update({
+    where:  { id },
+    data:   { status: "NO_SHOW" },
+    select: APPOINTMENT_SELECT,
+  });
+
+  await writeAuditLog({ actorId, action: "APPOINTMENT_NO_SHOW", entity: "Appointment", entityId: id, metadata: {} });
+  return updated;
 }

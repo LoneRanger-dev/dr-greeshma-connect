@@ -9,6 +9,7 @@ import {
   Heart,
   Star,
 } from "lucide-react";
+import { GlassCard } from "@/components/ui/glass-card";
 
 const FEATURES = [
   {
@@ -96,13 +97,18 @@ export function WhyChoose() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ duration: 0.65, ease: [0.19, 1, 0.22, 1], delay: i * 0.08 }}
-                className="group rounded-2xl border border-border bg-card p-7 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_8px_32px_oklch(0_0_0_/_0.07)]"
               >
-                <span className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${bg}`}>
-                  <Icon className={`h-6 w-6 ${iconCls}`} aria-hidden />
-                </span>
-                <h3 className="font-display mb-2 text-lg font-semibold">{title}</h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                <GlassCard
+                  tilt
+                  hover
+                  className="group border-border bg-card p-7 backdrop-blur-none dark:bg-card/80"
+                >
+                  <span className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl ${bg}`}>
+                    <Icon className={`h-6 w-6 ${iconCls}`} aria-hidden />
+                  </span>
+                  <h3 className="font-display mb-2 text-lg font-semibold">{title}</h3>
+                  <p className="text-sm leading-relaxed text-muted-foreground">{desc}</p>
+                </GlassCard>
               </motion.div>
             );
           })}

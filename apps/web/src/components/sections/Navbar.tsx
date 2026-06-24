@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Menu, Stethoscope, X } from "lucide-react";
+import { Menu, Stethoscope, X, LayoutDashboard, LogOut, User } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
 import {
   Sheet,
   SheetContent,
@@ -23,6 +24,10 @@ const NAV_LINKS = [
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
+
+  const isAdminRole =
+    session?.user?.role === "DOCTOR" || session?.user?.role === "ADMIN";
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 24);
@@ -71,13 +76,51 @@ export function Navbar() {
               </Link>
             </li>
           ))}
+          {isAdminRole && (
+            <li>
+              <Link
+                href="/admin"
+                className="flex items-center gap-1.5 text-sm font-medium text-violet transition-colors hover:text-violet/80 focus-visible:outline-none"
+              >
+                <LayoutDashboard className="size-4" />
+                Admin Dashboard
+              </Link>
+            </li>
+          )}
         </ul>
 
         {/* Desktop CTA */}
-        <div className="hidden md:block">
-          <MagicButton href="/book" size="sm">
-            Book Appointment
-          </MagicButton>
+        <div className="hidden items-center gap-3 md:flex">
+          {session ? (
+            <div className="flex items-center gap-3">
+              <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <User className="size-4" />
+                {session.user.name?.split(" ")[0]}
+              </span>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-destructive"
+              >
+                <LogOut className="size-4" />
+                Sign out
+              </button>
+              <MagicButton href="/book" size="sm">
+                Book
+              </MagicButton>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Link
+                href="/login"
+                className="text-sm font-medium text-foreground/70 transition-colors hover:text-teal"
+              >
+                Sign in
+              </Link>
+              <MagicButton href="/book" size="sm">
+                Book Appointment
+              </MagicButton>
+            </div>
+          )}
         </div>
 
         {/* Mobile hamburger */}
@@ -124,12 +167,51 @@ export function Navbar() {
                       </Link>
                     </li>
                   ))}
+                  {isAdminRole && (
+                    <li>
+                      <Link
+                        href="/admin"
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium text-violet transition-colors hover:bg-violet/8"
+                      >
+                        <LayoutDashboard className="size-5" />
+                        Admin Dashboard
+                      </Link>
+                    </li>
+                  )}
                 </ul>
               </nav>
 
-              <MagicButton href="/book" className="w-full">
-                Book Appointment
-              </MagicButton>
+              {session ? (
+                <div className="flex flex-col gap-3">
+                  <p className="px-3 text-sm text-muted-foreground">
+                    Signed in as <span className="font-medium text-foreground">{session.user.name}</span>
+                  </p>
+                  <MagicButton href="/book" className="w-full" onClick={() => setOpen(false)}>
+                    Book Appointment
+                  </MagicButton>
+                  <button
+                    onClick={() => { setOpen(false); signOut({ callbackUrl: "/" }); }}
+                    className="flex items-center gap-2 rounded-lg px-3 py-3 text-base font-medium text-destructive/80 transition-colors hover:bg-destructive/8"
+                  >
+                    <LogOut className="size-5" />
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-3">
+                  <MagicButton href="/book" className="w-full" onClick={() => setOpen(false)}>
+                    Book Appointment
+                  </MagicButton>
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="flex items-center justify-center rounded-lg border border-border px-3 py-3 text-base font-medium text-foreground/80 transition-colors hover:border-teal/40 hover:text-teal"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              )}
 
               <p className="text-center text-xs text-muted-foreground">
                 Mon–Sat · 9 AM – 6 PM IST

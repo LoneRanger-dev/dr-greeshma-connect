@@ -42,8 +42,14 @@ pnpm dev
 | `JWT_ACCESS_EXPIRES_IN` | Access token TTL | `15m` |
 | `JWT_REFRESH_EXPIRES_IN` | Refresh token TTL | `7d` |
 | `CORS_ORIGINS` | Comma-separated allowed origins | `http://localhost:3000` |
-| `RAZORPAY_KEY_ID` | Razorpay key | (Step 11) |
-| `RAZORPAY_KEY_SECRET` | Razorpay secret | (Step 11) |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID (Calendar + Meet) | (Step 11) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | (Step 11) |
+| `GOOGLE_CALENDAR_ID` | Calendar to create events on | `primary` |
+| `GOOGLE_REDIRECT_URI` | OAuth callback URL | `http://localhost:4000/google/callback` |
+| `GOOGLE_OAUTH_SUCCESS_URL` | Where to redirect after OAuth | `http://localhost:3006/admin/availability` |
+| `GOOGLE_REFRESH_TOKEN` | Pre-obtained refresh token (Option B setup) | (optional) |
+| `RAZORPAY_KEY_ID` | Razorpay key | (Step 12) |
+| `RAZORPAY_KEY_SECRET` | Razorpay secret | (Step 12) |
 | `SMTP_*` | Email delivery config | (Step 13) |
 | `WHATSAPP_*` | WhatsApp / Twilio config | (Step 13) |
 
@@ -148,16 +154,36 @@ Authorization: Bearer <accessToken>
 
 ---
 
-### Appointments — `/appointments` _(Step 8)_
+### Appointments — `/appointments` _(Steps 7–11)_
 
 | Method | Path | Auth | Role | Description |
 |---|---|---|---|---|
-| GET | `/appointments` | ✓ | any | List user's appointments |
+| GET | `/appointments` | ✓ | any | List user's appointments (role-scoped) |
 | POST | `/appointments` | ✓ | PATIENT | Book a new appointment |
 | GET | `/appointments/:id` | ✓ | any | Get single appointment |
-| PATCH | `/appointments/:id/reschedule` | ✓ | PATIENT | Reschedule |
-| PATCH | `/appointments/:id/cancel` | ✓ | PATIENT/DOCTOR | Cancel |
-| PATCH | `/appointments/:id/complete` | ✓ | DOCTOR | Mark completed |
+| GET | `/appointments/:id/meet` | ✓ | any | Get Meet link for an appointment |
+| PATCH | `/appointments/:id/reschedule` | ✓ | PATIENT | Reschedule (patches Google event) |
+| PATCH | `/appointments/:id/cancel` | ✓ | PATIENT/DOCTOR | Cancel (deletes Google event) |
+| PATCH | `/appointments/:id/confirm` | ✓ | DOCTOR/ADMIN | Confirm (creates Google Meet event) |
+| PATCH | `/appointments/:id/complete` | ✓ | DOCTOR/ADMIN | Mark completed |
+| PATCH | `/appointments/:id/no-show` | ✓ | DOCTOR/ADMIN | Mark no-show |
+
+### Admin — `/admin` _(Step 10)_
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/admin/stats` | ✓ | DOCTOR/ADMIN | Dashboard analytics |
+| GET/POST/PATCH/DELETE | `/admin/availability-rules` | ✓ | DOCTOR/ADMIN | Availability rule CRUD |
+| GET/POST/DELETE | `/admin/blocked-dates` | ✓ | DOCTOR/ADMIN | Blocked dates CRUD |
+| GET | `/admin/patients` | ✓ | DOCTOR/ADMIN | Patient list with history |
+
+### Google Calendar — `/google` _(Step 11)_
+
+| Method | Path | Auth | Role | Description |
+|---|---|---|---|---|
+| GET | `/google/auth-url` | ✓ | DOCTOR/ADMIN | Get OAuth consent URL |
+| GET | `/google/status` | ✓ | DOCTOR/ADMIN | Check if Google Calendar is connected |
+| GET | `/google/callback` | None | — | OAuth2 redirect handler (called by Google) |
 
 ---
 

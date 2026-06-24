@@ -1,0 +1,156 @@
+# render.yaml — Infrastructure-as-Code for Render.com
+# Docs: https://render.com/docs/blueprint-spec
+#
+# IMPORTANT: All `sync: false` env vars must be set manually in the
+# Render dashboard (Environment → Secret Files / Env Vars).
+# Do NOT put real credentials in this file.
+
+services:
+  - type: web
+    name: dr-greeshma-api
+    runtime: node
+    region: singapore       # Closest Render region to India
+    plan: free              # NOTE: free tier spins down after 15 min idle.
+                            # First request after idle takes ~30s (cold start).
+                            # Upgrade to Starter ($7/mo) to eliminate cold starts.
+
+    rootDir: .              # Repo root — pnpm workspace lives here
+
+    # ── Build ─────────────────────────────────────────────────────────────────
+    # Order matters for the workspace:
+    #   1. Install all workspace packages (shared + api + web dev deps)
+    #   2. Compile packages/shared so @dr-greeshma/shared resolves at build time
+    #   3. Generate Prisma client (creates node_modules/.prisma/client types)
+    #   4. Compile apps/api TypeScript → dist/
+    buildCommand: >-
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @dr-greeshma/shared build &&
+      pnpm --filter api db:generate &&
+      pnpm --filter api build
+
+    # ── Pre-deploy (runs after build, before the new instance goes live) ──────
+    # Runs prisma migrate deploy over DIRECT_URL (non-pooled) so pgbouncer
+    # advisory-lock timeout (P1002) is never triggered.
+    # Render keeps the OLD instance running until this command succeeds.
+    preDeployCommand: pnpm --filter api db:deploy
+
+    # ── Start ─────────────────────────────────────────────────────────────────
+    startCommand: node apps/api/dist/index.js
+
+    # ── Health check ─────────────────────────────────────────────────────────
+    healthCheckPath: /health
+
+    # ── Environment variables ─────────────────────────────────────────────────
+    envVars:
+      # Node version — matches local (v22). Render reads this to select runtime.
+      - key: NODE_VERSION
+        value: 22.20.0
+
+      - key: NODE_ENV
+        value: production
+
+      # ── Database ────────────────────────────────────────────────────────────
+      # DATABASE_URL  → pooled (pgbouncer) connection used at runtime
+      # Format: postgresql://postgres.<ref>:<pwd>@aws-0-ap-south-1.pooler.supabase.com:6543/postgres?pgbouncer=true
+      # Percent-encode special chars in password: @ → %40, # → %23
+      - key: DATABASE_URL
+        sync: false
+
+      # DIRECT_URL → non-pooled connection used ONLY by prisma migrate deploy
+      # Format: postgresql://postgres:<pwd>@db.<ref>.supabase.co:5432/postgres
+      - key: DIRECT_URL
+        sync: false
+
+      # ── JWT ──────────────────────────────────────────────────────────────────
+      # Generate fresh values: openssl rand -base64 32
+      - key: JWT_ACCESS_SECRET
+        sync: false
+
+      - key: JWT_REFRESH_SECRET
+        sync: false
+
+      - key: JWT_ACCESS_EXPIRES_IN
+        value: 15m
+
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 7d
+
+      # ── CORS ─────────────────────────────────────────────────────────────────
+      # Set to your Vercel frontend domain AFTER Part 3 deployment.
+      # Example: https://dr-greeshma-connect.vercel.app
+      - key: CORS_ORIGINS
+        sync: false
+
+      # ── Google Calendar / OAuth ───────────────────────────────────────────────
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+
+      - key: GOOGLE_CALENDAR_ID
+        value: primary
+
+      # Set to https://<your-render-service>.onrender.com/google/callback
+      - key: GOOGLE_REDIRECT_URI
+        sync: false
+
+      # Set to https://<your-vercel-app>.vercel.app/admin/availability
+      - key: GOOGLE_OAUTH_SUCCESS_URL
+        sync: false
+
+      # ── Razorpay ─────────────────────────────────────────────────────────────
+      - key: RAZORPAY_KEY_ID
+        sync: false
+
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+
+      # From Razorpay Dashboard → Webhooks → your webhook → Secret
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false
+
+      # ── Email (Gmail App Password) ────────────────────────────────────────────
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+
+      - key: SMTP_PORT
+        value: "587"
+
+      - key: SMTP_SECURE
+        value: "false"
+
+      - key: SMTP_USER
+        sync: false
+
+      - key: SMTP_PASS
+        sync: false
+
+      # e.g.  Dr. Greeshma Connect <no-reply@gmail.com>
+      - key: SMTP_FROM
+        sync: false
+
+      # ── WhatsApp (Meta Cloud API) ─────────────────────────────────────────────
+      - key: WHATSAPP_TOKEN
+        sync: false
+
+      - key: WHATSAPP_PHONE_ID
+        sync: false
+
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+
+      - key: WHATSAPP_TEMPLATE_BOOKING_CONFIRMED
+        value: booking_confirmed
+
+      - key: WHATSAPP_TEMPLATE_BOOKING_RESCHEDULED
+        value: booking_rescheduled
+
+      - key: WHATSAPP_TEMPLATE_BOOKING_CANCELLED
+        value: booking_cancelled
+
+      - key: WHATSAPP_TEMPLATE_REMINDER_24H
+        value: appointment_reminder_24h
+
+      - key: WHATSAPP_TEMPLATE_REMINDER_1H
+        value: appointment_reminder_1h

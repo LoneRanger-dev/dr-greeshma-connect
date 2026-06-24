@@ -1,1 +1,3 @@
-export async function GET() { return new Response("NextAuth — Step 9"); } export async function POST() { return new Response("NextAuth — Step 9"); }
+import { handlers } from "@/auth";
+
+export const { GET, POST } = handlers;

@@ -1,12 +1,10 @@
 import type { Metadata } from "next";
-import { Navbar } from "@/components/sections/Navbar";
 import { Hero } from "@/components/sections/Hero";
 import { TrustStrip } from "@/components/sections/TrustStrip";
 import { ServicesPreview } from "@/components/sections/ServicesPreview";
 import { WhyChoose } from "@/components/sections/WhyChoose";
 import { Testimonials } from "@/components/sections/Testimonials";
 import { CTABand } from "@/components/sections/CTABand";
-import { Footer } from "@/components/sections/Footer";
 
 export const metadata: Metadata = {
   title: "Dr. Greeshma Connect | Smart Telehealth Booking",
@@ -17,21 +15,12 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <>
-      <Navbar />
-
       <Hero />
-
       <TrustStrip />
-
       <ServicesPreview />
-
       <WhyChoose />
-
       <Testimonials />
-
       <CTABand />
-
-      <Footer />
     </>
   );
 }

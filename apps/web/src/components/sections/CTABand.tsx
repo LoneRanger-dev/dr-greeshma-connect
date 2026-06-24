@@ -1,3 +1,5 @@
+"use client";
+
 import { motion } from "framer-motion";
 import { ArrowRight, Video } from "lucide-react";
 import { AuroraBackground } from "@/components/ui/aurora-background";

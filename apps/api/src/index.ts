@@ -1,8 +1,9 @@
-// Entry point — Express app (populated in Step 6)
-import express from "express";
+// Entry point — Express app (full implementation in Step 6)
+import express, { Application } from "express";
+import "dotenv/config";
+import { config } from "./config";
 
-const app = express();
-const PORT = process.env.PORT ?? 4000;
+const app: Application = express();
 
 app.use(express.json());
 
@@ -10,8 +11,8 @@ app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-app.listen(PORT, () => {
-  console.log(`API server running on http://localhost:${PORT}`);
+app.listen(config.port, () => {
+  console.log(`API server running on http://localhost:${config.port} (${config.nodeEnv})`);
 });
 
 export default app;

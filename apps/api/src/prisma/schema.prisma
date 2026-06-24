@@ -1,4 +1,8 @@
-// Prisma schema — populated in Step 5
+// =============================================================================
+// Dr. Greeshma Connect — Prisma Schema
+// PostgreSQL (Supabase-compatible) · Prisma 5
+// =============================================================================
+
 datasource db {
   provider  = "postgresql"
   url       = env("DATABASE_URL")
@@ -7,4 +11,235 @@ datasource db {
 
 generator client {
   provider = "prisma-client-js"
+}
+
+// ─────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  RESCHEDULED
+  CANCELLED
+  COMPLETED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  CREATED
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+// ─────────────────────────────────────────────────────────────
+// User
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  phone         String?
+  passwordHash  String?
+  role          Role      @default(PATIENT)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  doctorProfile DoctorProfile?
+  appointments  Appointment[]  @relation("PatientAppointments")
+  auditLogs     AuditLog[]     @relation("ActorLogs")
+
+  @@index([role])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Doctor Profile
+// ─────────────────────────────────────────────────────────────
+
+model DoctorProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  bio               String?
+  specialties       String[]
+  consultFeeDefault Int      @default(0)
+
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availabilityRules AvailabilityRule[]
+  blockedDates      BlockedDate[]
+  appointments      Appointment[]      @relation("DoctorAppointments")
+
+  @@index([userId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Service (consultation types offered)
+// ─────────────────────────────────────────────────────────────
+
+model Service {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  durationMin Int
+  priceInr    Int
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  appointments Appointment[]
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Availability Rule  (weekly schedule)
+// ─────────────────────────────────────────────────────────────
+
+model AvailabilityRule {
+  id              String   @id @default(cuid())
+  doctorId        String
+  // 0 = Sunday, 1 = Monday … 6 = Saturday (ISO-compatible with day-of-week math)
+  weekday         Int
+  // "HH:mm" strings stored in IST, converted to UTC when generating slots
+  startTime       String
+  endTime         String
+  slotIntervalMin Int      @default(30)
+  isRecurring     Boolean  @default(true)
+  validFrom       DateTime
+  validTo         DateTime?
+  createdAt       DateTime @default(now())
+
+  doctor          DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId])
+  @@index([doctorId, weekday])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Blocked Date  (vacations / public holidays)
+// ─────────────────────────────────────────────────────────────
+
+model BlockedDate {
+  id        String   @id @default(cuid())
+  doctorId  String
+  date      DateTime @db.Date
+  reason    String?
+  createdAt DateTime @default(now())
+
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@unique([doctorId, date])
+  @@index([doctorId])
+  @@index([date])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Appointment
+// UNIQUE(doctorId, startsAt) prevents double booking at DB level
+// ─────────────────────────────────────────────────────────────
+
+model Appointment {
+  id            String            @id @default(cuid())
+  patientId     String
+  serviceId     String
+  doctorId      String
+  startsAt      DateTime
+  endsAt        DateTime
+  status        AppointmentStatus @default(PENDING)
+  meetLink      String?
+  googleEventId String?
+  amountInr     Int
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  patient       User          @relation("PatientAppointments", fields: [patientId], references: [id])
+  service       Service       @relation(fields: [serviceId], references: [id])
+  doctor        DoctorProfile @relation("DoctorAppointments", fields: [doctorId], references: [id])
+  payment       Payment?
+  notifications Notification[]
+
+  // Prevents double-booking: the DB rejects two appointments for the same doctor at the same start time
+  @@unique([doctorId, startsAt])
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([serviceId])
+  @@index([startsAt])
+  @@index([status])
+  @@index([doctorId, startsAt, status])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Payment  (Razorpay)
+// ─────────────────────────────────────────────────────────────
+
+model Payment {
+  id                String        @id @default(cuid())
+  appointmentId     String        @unique
+  razorpayOrderId   String        @unique
+  razorpayPaymentId String?
+  status            PaymentStatus @default(CREATED)
+  amountInr         Int
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([razorpayOrderId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Notification  (email / WhatsApp / SMS log)
+// ─────────────────────────────────────────────────────────────
+
+model Notification {
+  id            String              @id @default(cuid())
+  appointmentId String
+  channel       NotificationChannel
+  type          String              // e.g. BOOKING_CONFIRMED, REMINDER_24H
+  status        String              @default("PENDING") // PENDING | SENT | FAILED
+  sentAt        DateTime?
+  error         String?
+  createdAt     DateTime            @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+
+  @@index([appointmentId])
+  @@index([status, sentAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// Audit Log  (immutable mutation history)
+// ─────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String   // e.g. APPOINTMENT_CREATED, APPOINTMENT_CANCELLED
+  entity    String   // table name
+  entityId  String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  actor User? @relation("ActorLogs", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
 }

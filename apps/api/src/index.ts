@@ -10,6 +10,8 @@ import { logger } from "./utils/logger";
 import { auditLogMiddleware } from "./middleware/auditLog";
 import { errorHandler } from "./middleware/errorHandler";
 import { authRouter } from "./modules/auth/auth.router";
+import { slotsRouter } from "./modules/slots/slots.router";
+import { appointmentsRouter } from "./modules/appointments/appointments.router";
 
 // ── App setup ─────────────────────────────────────────────────
 const app: Application = express();
@@ -57,11 +59,11 @@ app.get("/health", (_req: Request, res: Response) => {
   res.json({ status: "ok", timestamp: new Date().toISOString(), env: config.nodeEnv });
 });
 
-app.use("/auth", authRouter);
+app.use("/auth",         authRouter);
+app.use("/slots",        slotsRouter);
+app.use("/appointments", appointmentsRouter);
 
-// Placeholder routers — populated in Steps 7–13
-// app.use("/slots",        slotsRouter);
-// app.use("/appointments", appointmentsRouter);
+// Placeholder routers — populated in Steps 11–13
 // app.use("/payments",     paymentsRouter);
 // app.use("/webhooks",     webhooksRouter);
 

@@ -165,7 +165,11 @@ model Appointment {
   meetLink      String?
   googleEventId String?
   amountInr     Int
-  notes         String?
+  notes               String?
+  patientName         String?
+  patientEmail        String?
+  patientPhone        String?
+  cancellationReason  String?
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
 

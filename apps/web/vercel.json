@@ -1,0 +1,18 @@
+{
+  "framework": "nextjs",
+
+  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+
+  "buildCommand": "cd ../.. && pnpm --filter @dr-greeshma/shared build && pnpm --filter web build",
+
+  "outputDirectory": ".next",
+
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
+  ]
+}

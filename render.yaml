@@ -26,13 +26,8 @@ services:
       pnpm install --frozen-lockfile &&
       pnpm --filter @dr-greeshma/shared build &&
       pnpm --filter api db:generate &&
-      pnpm --filter api build
-
-    # ── Pre-deploy (runs after build, before the new instance goes live) ──────
-    # Runs prisma migrate deploy over DIRECT_URL (non-pooled) so pgbouncer
-    # advisory-lock timeout (P1002) is never triggered.
-    # Render keeps the OLD instance running until this command succeeds.
-    preDeployCommand: pnpm --filter api db:deploy
+      pnpm --filter api build &&
+      pnpm --filter api db:deploy
 
     # ── Start ─────────────────────────────────────────────────────────────────
     startCommand: node apps/api/dist/index.js

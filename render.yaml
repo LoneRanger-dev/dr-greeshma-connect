@@ -18,12 +18,15 @@ services:
 
     # ── Build ─────────────────────────────────────────────────────────────────
     # Order matters for the workspace:
-    #   1. Install all workspace packages (shared + api + web dev deps)
+    #   1. Install ALL deps including devDependencies (NODE_ENV=development prefix
+    #      overrides Render's NODE_ENV=production so pnpm doesn't skip devDeps;
+    #      without this, tsc/prisma-cli are missing and the build fails)
     #   2. Compile packages/shared so @dr-greeshma/shared resolves at build time
     #   3. Generate Prisma client (creates node_modules/.prisma/client types)
     #   4. Compile apps/api TypeScript → dist/
+    #   5. Run prisma migrate deploy (uses DIRECT_URL — no pgbouncer advisory lock)
     buildCommand: >-
-      pnpm install --frozen-lockfile &&
+      NODE_ENV=development pnpm install --frozen-lockfile &&
       pnpm --filter @dr-greeshma/shared build &&
       pnpm --filter api db:generate &&
       pnpm --filter api build &&

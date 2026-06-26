@@ -1,12 +1,140 @@
 "use client";
 
-import { useRef, useMemo } from "react";
+import { Component, Suspense, useMemo, useRef, type ReactNode } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Float, MeshDistortMaterial, Sphere } from "@react-three/drei";
+import { Float, MeshDistortMaterial, Sphere, useGLTF } from "@react-three/drei";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import * as THREE from "three";
 
-// ── Warm floating light motes — tiny glowing particles drifting inside the womb ──
+// Kick off the GLB fetch immediately so it's cached before the component mounts
+useGLTF.preload("/models/fetus.glb");
+
+// ── X-Ray ShaderMaterial ──────────────────────────────────────────────────────
+// Fresnel rim-glow: deep teal core → rose-gold (#E8B4B8) glowing edges.
+// Nearly transparent at the surface facing the camera; opaque + emissive at
+// silhouette edges so Bloom catches the rim. Slow pulse keeps it alive.
+
+const XRAY_VERT = /* glsl */ `
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    vec4 mvPosition  = modelViewMatrix * vec4(position, 1.0);
+    vViewPosition    = -mvPosition.xyz;
+    vNormal          = normalize(normalMatrix * normal);
+    gl_Position      = projectionMatrix * mvPosition;
+  }
+`;
+
+const XRAY_FRAG = /* glsl */ `
+  uniform float uTime;
+  uniform vec3  uCoreColor;
+  uniform vec3  uRimColor;
+  uniform float uRimPower;
+
+  varying vec3 vNormal;
+  varying vec3 vViewPosition;
+
+  void main() {
+    vec3  N       = normalize(vNormal);
+    vec3  V       = normalize(vViewPosition);
+
+    float facing  = abs(dot(V, N));
+    float fresnel = pow(1.0 - facing, uRimPower);
+
+    float pulse   = 0.82 + 0.18 * sin(uTime * 0.9);
+    float rim     = fresnel * pulse;
+
+    vec3 col = mix(uCoreColor, uRimColor, rim);
+    col += uRimColor * rim * 0.55;
+
+    float alpha = mix(0.07, 0.92, rim);
+    gl_FragColor = vec4(col, alpha);
+  }
+`;
+
+function makeXRayMaterial(): THREE.ShaderMaterial {
+  return new THREE.ShaderMaterial({
+    vertexShader:   XRAY_VERT,
+    fragmentShader: XRAY_FRAG,
+    uniforms: {
+      uTime:      { value: 0 },
+      uCoreColor: { value: new THREE.Color("#0EA5A4") },
+      uRimColor:  { value: new THREE.Color("#E8B4B8") },
+      uRimPower:  { value: 2.5 },
+    },
+    transparent: true,
+    depthWrite:  false,
+    side:        THREE.DoubleSide,
+    blending:    THREE.NormalBlending,
+  });
+}
+
+// ── Error boundary: catches useGLTF 404 / parse failures ─────────────────────
+class FetusErrorBoundary extends Component<
+  { children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  componentDidCatch(err: Error) {
+    console.warn(
+      "[WombScene] fetus.glb failed to load — womb backdrop still visible:",
+      err.message,
+    );
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
+
+// ── GLB loader — must live inside <Suspense> ──────────────────────────────────
+function FetusModel() {
+  const { scene } = useGLTF("/models/fetus.glb");
+
+  const xrayMat = useMemo(makeXRayMaterial, []);
+
+  const cloned = useMemo(() => {
+    const clone = scene.clone(true);
+
+    // Auto-scale: fit the longest axis to 2.5 scene units regardless of
+    // what units the GLB was exported in (meters / cm / arbitrary)
+    const box = new THREE.Box3().setFromObject(clone);
+    const size = new THREE.Vector3();
+    box.getSize(size);
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const autoScale = maxDim > 0 ? 2.5 / maxDim : 1;
+    clone.scale.setScalar(autoScale);
+
+    // Center at scene origin
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    clone.position.copy(center).multiplyScalar(-autoScale);
+
+    // Apply x-ray shader to every mesh in the hierarchy
+    clone.traverse((obj) => {
+      if (obj instanceof THREE.Mesh) {
+        obj.material    = xrayMat;
+        obj.renderOrder = 1;
+      }
+    });
+
+    return clone;
+  }, [scene, xrayMat]);
+
+  useFrame((state) => {
+    xrayMat.uniforms.uTime.value = state.clock.elapsedTime;
+  });
+
+  return <primitive object={cloned} />;
+}
+
+// ── Warm floating light motes ─────────────────────────────────────────────────
 function Motes({ count = 52 }: { count?: number }) {
   const ref = useRef<THREE.Points>(null);
 
@@ -47,18 +175,17 @@ function Motes({ count = 52 }: { count?: number }) {
   );
 }
 
-// ── Main womb + fetus scene ──
+// ── Main scene ────────────────────────────────────────────────────────────────
 function WombScene() {
-  const sceneRef = useRef<THREE.Group>(null);  // parallax target
-  const fetusRef = useRef<THREE.Group>(null);  // heartbeat scale target
-  const wombRef  = useRef<THREE.Mesh>(null);   // gentle breathing inner glow
-  const ringRef  = useRef<THREE.Mesh>(null);   // slow drifting outer ring
+  const sceneRef = useRef<THREE.Group>(null);  // parallax
+  const fetusRef = useRef<THREE.Group>(null);  // heartbeat + Y-rotation
+  const wombRef  = useRef<THREE.Mesh>(null);   // breathing inner glow
+  const ringRef  = useRef<THREE.Mesh>(null);   // drifting ring
   const { mouse } = useThree();
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
 
-    // Slow pointer parallax — the whole scene tracks the cursor softly
     if (sceneRef.current) {
       sceneRef.current.position.x = THREE.MathUtils.lerp(
         sceneRef.current.position.x, mouse.x * 0.35, 0.04,
@@ -68,21 +195,18 @@ function WombScene() {
       );
     }
 
-    // Heartbeat pulse — ~1.2s period (2π / 1.2 ≈ 5.24 rad/s), ±3% scale
+    // Heartbeat ±3% at ~1.2 s + slow continuous rotation
     if (fetusRef.current) {
       fetusRef.current.scale.setScalar(1 + Math.sin(t * 5.24) * 0.03);
+      fetusRef.current.rotation.y = t * 0.15;
     }
 
-    // Womb breathing — slower, independent of heartbeat
     if (wombRef.current) {
-      (wombRef.current as THREE.Mesh).scale.setScalar(
-        1 + Math.sin(t * 0.55) * 0.025,
-      );
+      wombRef.current.scale.setScalar(1 + Math.sin(t * 0.55) * 0.025);
       (wombRef.current.material as THREE.MeshBasicMaterial).opacity =
         0.12 + Math.sin(t * 0.45) * 0.04;
     }
 
-    // Ring drift
     if (ringRef.current) {
       ringRef.current.rotation.z = t * 0.048;
       ringRef.current.rotation.x = Math.PI / 5 + Math.sin(t * 0.28) * 0.06;
@@ -91,7 +215,6 @@ function WombScene() {
 
   return (
     <>
-      {/* Warm OB-GYN lighting — rose-gold key, violet fill, teal accent */}
       <ambientLight intensity={0.22} />
       <pointLight position={[ 0,  0,  4]} intensity={30} color="#E8B4B8" />
       <pointLight position={[-3,  2,  1]} intensity={18} color="#7C6CF0" />
@@ -100,9 +223,7 @@ function WombScene() {
 
       <group ref={sceneRef}>
 
-        {/* ── Womb atmosphere — three nested BackSide spheres, outer→inner ── */}
-
-        {/* Outermost: barely-there violet boundary */}
+        {/* ── Womb atmosphere ── */}
         <Sphere args={[2.9, 40, 40]}>
           <meshBasicMaterial
             color="#7C6CF0"
@@ -113,7 +234,6 @@ function WombScene() {
           />
         </Sphere>
 
-        {/* Mid: warm rose-gold haze with subtle organic distortion */}
         <Sphere args={[2.5, 40, 40]}>
           <MeshDistortMaterial
             color="#E8B4B8"
@@ -129,7 +249,6 @@ function WombScene() {
           />
         </Sphere>
 
-        {/* Inner: breathing core glow */}
         <mesh ref={wombRef}>
           <sphereGeometry args={[2.0, 32, 32]} />
           <meshBasicMaterial
@@ -142,120 +261,39 @@ function WombScene() {
         </mesh>
 
         {/* ── Orbit rings ── */}
-
-        {/* Primary rose-gold ring — slowly drifts */}
         <mesh ref={ringRef} rotation={[Math.PI / 5, 0, 0]}>
           <torusGeometry args={[2.3, 0.012, 8, 80]} />
           <meshBasicMaterial color="#E8B4B8" transparent opacity={0.28} />
         </mesh>
-
-        {/* Secondary teal ring — static tilt */}
         <mesh rotation={[Math.PI / 3, Math.PI / 6, 0]}>
           <torusGeometry args={[2.0, 0.008, 8, 64]} />
           <meshBasicMaterial color="#0EA5A4" transparent opacity={0.15} />
         </mesh>
 
-        {/* ── Floating light motes ── */}
+        {/* ── Motes ── */}
         <Motes count={52} />
 
-        {/* ── Stylised fetus silhouette — abstract curled form, glowing blobs ── */}
-        <Float speed={1.1} rotationIntensity={0.08} floatIntensity={0.35}>
+        {/* ── X-ray fetus model ──
+         *  Float: gentle vertical bob.
+         *  fetusRef: heartbeat scale + slow Y rotation.
+         *  FetusErrorBoundary: suppresses 404/parse errors, logs a warning.
+         *  Suspense fallback=null: womb backdrop stays visible while GLB loads.
+         */}
+        <Float speed={1.1} rotationIntensity={0.0} floatIntensity={0.3}>
           <group ref={fetusRef}>
-
-            {/* Soft overall aura — ties the blobs into one glowing form */}
-            <Sphere args={[0.88, 24, 24]} position={[0.02, 0.07, 0]}>
-              <meshBasicMaterial
-                color="#F5C6CB"
-                transparent
-                opacity={0.07}
-                depthWrite={false}
-              />
-            </Sphere>
-
-            {/* Head */}
-            <Sphere args={[0.28, 32, 32]} position={[0.06, 0.54, 0.05]}>
-              <MeshDistortMaterial
-                color="#FADADD"
-                distort={0.12}
-                speed={1.2}
-                roughness={0.15}
-                metalness={0.2}
-                emissive="#FADADD"
-                emissiveIntensity={1.15}
-                transparent
-                opacity={0.92}
-              />
-            </Sphere>
-
-            {/* Neck / chin transition */}
-            <Sphere args={[0.14, 24, 24]} position={[0.04, 0.29, 0.04]}>
-              <MeshDistortMaterial
-                color="#F5C6CB"
-                distort={0.1}
-                speed={1.0}
-                roughness={0.2}
-                metalness={0.2}
-                emissive="#F5C6CB"
-                emissiveIntensity={0.9}
-                transparent
-                opacity={0.85}
-              />
-            </Sphere>
-
-            {/* Torso */}
-            <Sphere args={[0.34, 32, 32]} position={[0, 0.05, 0]}>
-              <MeshDistortMaterial
-                color="#E8B4B8"
-                distort={0.16}
-                speed={1.0}
-                roughness={0.2}
-                metalness={0.25}
-                emissive="#E8B4B8"
-                emissiveIntensity={0.88}
-                transparent
-                opacity={0.88}
-              />
-            </Sphere>
-
-            {/* Curled knees — tucked toward chest */}
-            <Sphere args={[0.22, 28, 28]} position={[0.28, -0.26, 0.12]}>
-              <MeshDistortMaterial
-                color="#E8B4B8"
-                distort={0.14}
-                speed={0.9}
-                roughness={0.22}
-                metalness={0.2}
-                emissive="#E8B4B8"
-                emissiveIntensity={0.8}
-                transparent
-                opacity={0.82}
-              />
-            </Sphere>
-
-            {/* Lower body / pelvis */}
-            <Sphere args={[0.24, 28, 28]} position={[-0.06, -0.35, 0]}>
-              <MeshDistortMaterial
-                color="#DCA5B0"
-                distort={0.12}
-                speed={0.9}
-                roughness={0.25}
-                metalness={0.18}
-                emissive="#DCA5B0"
-                emissiveIntensity={0.76}
-                transparent
-                opacity={0.78}
-              />
-            </Sphere>
-
+            <FetusErrorBoundary>
+              <Suspense fallback={null}>
+                <FetusModel />
+              </Suspense>
+            </FetusErrorBoundary>
           </group>
         </Float>
       </group>
 
-      {/* Warm bloom — lower threshold so rose-gold highlights glow richly */}
       <EffectComposer>
         <Bloom
-          intensity={1.1}
-          luminanceThreshold={0.25}
+          intensity={1.0}
+          luminanceThreshold={0.28}
           luminanceSmoothing={0.92}
           mipmapBlur
         />
@@ -264,7 +302,6 @@ function WombScene() {
   );
 }
 
-// Export kept as AuroraOrb so Hero.tsx import is unchanged
 export function AuroraOrb() {
   return (
     <Canvas

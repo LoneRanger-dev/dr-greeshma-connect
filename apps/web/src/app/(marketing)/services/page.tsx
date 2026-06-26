@@ -7,6 +7,7 @@ import { SERVICES } from "@/lib/services";
 import { GlassCard } from "@/components/ui/glass-card";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { MagicButton } from "@/components/ui/magic-button";
+import { SITE } from "@/config/site";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Clock, IndianRupee } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -101,7 +102,7 @@ export default function ServicesPage() {
               </span>
             </h1>
             <p className="mx-auto max-w-xl text-lg text-muted-foreground">
-              From pregnancy planning to postnatal recovery — Dr. Greeshma provides
+              From pregnancy planning to postnatal recovery — {SITE.shortName} provides
               comprehensive OB-GYN care via secure Google Meet consultations, from wherever
               you are in India.
             </p>
@@ -173,7 +174,7 @@ export default function ServicesPage() {
               {
                 step: "03",
                 title: "Consult & Plan",
-                desc: "Meet Dr. Greeshma on Google Meet and receive a written care plan within 2 hours.",
+                desc: `Meet ${SITE.shortName} on Google Meet and receive a written care plan within 2 hours.`,
               },
             ].map(({ step, title, desc }, i) => (
               <motion.div

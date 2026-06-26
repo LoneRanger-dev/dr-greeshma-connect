@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SERVICES, getServiceBySlug } from "@/lib/services";
+import { BRAND } from "@/config/site";
 import { ServiceDetail } from "@/components/sections/ServiceDetail";
 
 import { ChevronRight } from "lucide-react";
@@ -19,10 +20,10 @@ export async function generateMetadata({
   const service = getServiceBySlug(slug);
   if (!service) return {};
   return {
-    title: `${service.title} | Dr. Greeshma Connect`,
+    title: `${service.title} | ${BRAND}`,
     description: service.summary,
     openGraph: {
-      title: `${service.title} | Dr. Greeshma Connect`,
+      title: `${service.title} | ${BRAND}`,
       description: service.summary,
       type: "website",
     },

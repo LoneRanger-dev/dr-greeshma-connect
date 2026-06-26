@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Quote, Star } from "lucide-react";
+import { SITE } from "@/config/site";
 import { GlassCard } from "@/components/ui/glass-card";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 
@@ -13,7 +14,7 @@ const TESTIMONIALS = [
     service: "Pregnancy Consultation",
     avatar: "PS",
     quote:
-      "Dr. Greeshma guided me through every trimester with such patience and expertise. The Google Meet consultations were so convenient during my third trimester. I felt completely safe and supported throughout.",
+      `${SITE.shortName} guided me through every trimester with such patience and expertise. The Google Meet consultations were so convenient during my third trimester. I felt completely safe and supported throughout.`,
   },
   {
     name: "Ananya Reddy",
@@ -21,7 +22,7 @@ const TESTIMONIALS = [
     service: "PCOS Management",
     avatar: "AR",
     quote:
-      "After years of irregular cycles, Dr. Greeshma gave me a clear diagnosis and personalised treatment plan within the first consultation. The WhatsApp follow-ups made all the difference — I finally feel in control of my health.",
+      `After years of irregular cycles, ${SITE.shortName} gave me a clear diagnosis and personalised treatment plan within the first consultation. The WhatsApp follow-ups made all the difference — I finally feel in control of my health.`,
   },
   {
     name: "Meera Krishnan",
@@ -29,7 +30,7 @@ const TESTIMONIALS = [
     service: "Infertility Consultation",
     avatar: "MK",
     quote:
-      "We were losing hope, but Dr. Greeshma's calm, evidence-based approach gave us a clear path forward. We are now expecting our first child. Words cannot express our gratitude for her care.",
+      `We were losing hope, but ${SITE.shortName}'s calm, evidence-based approach gave us a clear path forward. We are now expecting our first child. Words cannot express our gratitude for her care.`,
   },
 ];
 

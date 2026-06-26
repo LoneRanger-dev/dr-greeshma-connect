@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE, BRAND } from "@/config/site";
 import { MagicButton } from "@/components/ui/magic-button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { AuroraBackground } from "@/components/ui/aurora-background";
@@ -35,7 +36,7 @@ export default function StyleguidePage() {
     <div className="mx-auto max-w-5xl space-y-16 px-4 py-16">
       <header className="space-y-2">
         <h1 className="font-display text-4xl font-bold text-teal">
-          Dr. Greeshma Connect — Design System
+          {BRAND} — Design System
         </h1>
         <p className="text-muted-foreground">
           "Calm magical clinic" — teal · violet · rose-gold. Visual QA for Step 2.
@@ -67,7 +68,7 @@ export default function StyleguidePage() {
           <h1 className="font-display text-5xl font-bold">Display / H1 — Sora</h1>
           <h2 className="font-display text-3xl font-semibold">H2 — Sora semibold</h2>
           <h3 className="font-display text-2xl font-medium">H3 — Sora medium</h3>
-          <p className="text-lg">Body large — Inter 18px. Telehealth booking platform for Dr. Greeshma.</p>
+          <p className="text-lg">Body large — Inter 18px. Telehealth booking platform for {SITE.shortName}.</p>
           <p className="text-base">Body — Inter 16px. Comfortable reading for medical content.</p>
           <p className="text-sm text-muted-foreground">Small muted — labels, captions, metadata.</p>
           <p className="text-xs text-muted-foreground uppercase tracking-widest">Overline — uppercase xs</p>
@@ -138,7 +139,7 @@ export default function StyleguidePage() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Dr. Greeshma will review your reports and guide your treatment plan.
+                {SITE.shortName} will review your reports and guide your treatment plan.
               </p>
             </CardContent>
           </Card>

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ArrowRight, Video } from "lucide-react";
+import { SITE } from "@/config/site";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { MagicButton } from "@/components/ui/magic-button";
 
@@ -34,7 +35,7 @@ export function CTABand() {
               </h2>
 
               <p className="mx-auto max-w-lg text-lg text-white/70">
-                Join 8,000+ women who have trusted Dr. Greeshma for expert, compassionate
+                Join 8,000+ women who have trusted {SITE.shortName} for expert, compassionate
                 care — from wherever you are in India.
               </p>
 

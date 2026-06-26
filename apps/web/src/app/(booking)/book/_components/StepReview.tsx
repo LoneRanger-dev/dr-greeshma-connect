@@ -12,6 +12,7 @@ import { MagicButton } from "@/components/ui/magic-button";
 import { formatDate, formatINR, formatTime } from "@/lib/utils";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import type { PatientDetails } from "./StepDetails";
+import { BRAND } from "@/config/site";
 
 interface Props {
   service:    ApiService;
@@ -151,7 +152,7 @@ export function StepReview({
           key:         orderData.keyId,
           amount:      service.priceInr * 100, // paise
           currency:    "INR",
-          name:        "Dr. Greeshma Connect",
+          name:        BRAND,
           description: service.title,
           order_id:    orderData.orderId,
           prefill: {

@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/sheet";
 import { MagicButton } from "@/components/ui/magic-button";
 import { cn } from "@/lib/utils";
+import { SITE } from "@/config/site";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -59,7 +60,7 @@ export function Navbar() {
           <span className="font-display text-lg font-bold leading-none">
             Dr.{" "}
             <span className="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">
-              Greeshma
+              {SITE.doctorFirstName}
             </span>
           </span>
         </Link>
@@ -148,7 +149,7 @@ export function Navbar() {
                 <span className="font-display text-base font-bold">
                   Dr.{" "}
                   <span className="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">
-                    Greeshma
+                    {SITE.doctorFirstName}
                   </span>
                 </span>
               </Link>

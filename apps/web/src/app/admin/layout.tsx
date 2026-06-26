@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { SITE } from "@/config/site";
 import { signOut, useSession } from "next-auth/react";
 import {
   LayoutDashboard,
@@ -60,7 +61,7 @@ function SidebarContent({ onLinkClick }: { onLinkClick?: () => void }) {
           <HeartPulse className="size-4 text-white" />
         </div>
         <div className="leading-none">
-          <p className="text-xs font-bold text-foreground">Dr. Greeshma</p>
+          <p className="text-xs font-bold text-foreground">{SITE.shortName}</p>
           <p className="text-[10px] text-muted-foreground">Admin Portal</p>
         </div>
       </div>

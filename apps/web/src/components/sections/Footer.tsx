@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Stethoscope, Mail, Phone, MapPin, Instagram, Facebook, MessageCircle } from "lucide-react";
+import { SITE, BRAND } from "@/config/site";
 
 const QUICK_LINKS = [
   { href: "/", label: "Home" },
-  { href: "/about", label: "About Dr. Greeshma" },
+  { href: "/about", label: `About ${SITE.shortName}` },
   { href: "/services", label: "Services" },
   { href: "/book", label: "Book Appointment" },
   { href: "/styleguide", label: "Styleguide" },
@@ -38,12 +39,12 @@ export function Footer() {
               <span className="font-display text-lg font-bold">
                 Dr.{" "}
                 <span className="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">
-                  Greeshma
+                  {SITE.doctorFirstName}
                 </span>
               </span>
             </Link>
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Premium telehealth OB-GYN consultations with Dr. Greeshma Gopinath.
+              Premium telehealth OB-GYN consultations with {SITE.doctorName}.
               Compassionate care, anywhere in India.
             </p>
             <div className="flex gap-3" aria-label="Social media links">
@@ -147,7 +148,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-border pt-8 sm:flex-row">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} Dr. Greeshma Connect. All rights reserved.
+            © {new Date().getFullYear()} {BRAND}. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground">
             Designed & built with ♥ in India · All consultations via Google Meet

@@ -4,6 +4,7 @@ import "@/styles/globals.css";
 import { Providers } from "@/components/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { CursorGlow } from "@/components/ui/cursor-glow";
+import { SITE, BRAND } from "@/config/site";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -20,30 +21,28 @@ const sora = Sora({
 
 export const metadata: Metadata = {
   title: {
-    default: "Dr. Greeshma Connect | Smart Telehealth Booking",
-    template: "%s | Dr. Greeshma Connect",
+    default: `${BRAND} | Smart Telehealth Booking`,
+    template: `%s | ${BRAND}`,
   },
-  description:
-    "Book appointments with Dr. Greeshma Gopinath, Obstetrician & Gynecologist. Premium telehealth consultations for pregnancy, PCOS, infertility, and women's health.",
+  description: `Book appointments with ${SITE.doctorName}, ${SITE.specialty}. Premium telehealth consultations for pregnancy, PCOS, infertility, and women's health.`,
   keywords: [
     "OB-GYN",
     "telehealth",
     "appointment booking",
-    "Dr. Greeshma Gopinath",
+    SITE.doctorName,
     "pregnancy consultation",
     "PCOS",
     "infertility",
     "gynecology",
   ],
-  authors: [{ name: "Dr. Greeshma Gopinath" }],
-  creator: "Dr. Greeshma Connect",
+  authors: [{ name: SITE.doctorName }],
+  creator: BRAND,
   openGraph: {
     type: "website",
     locale: "en_IN",
-    title: "Dr. Greeshma Connect | Smart Telehealth Booking",
-    description:
-      "Premium telehealth consultations with Dr. Greeshma Gopinath, OB-GYN.",
-    siteName: "Dr. Greeshma Connect",
+    title: `${BRAND} | Smart Telehealth Booking`,
+    description: `Premium telehealth consultations with ${SITE.doctorName}, OB-GYN.`,
+    siteName: BRAND,
   },
 };
 

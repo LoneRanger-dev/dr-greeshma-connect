@@ -5,6 +5,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Calendar, CheckCircle2 } from "lucide-react";
 import { MagicButton } from "@/components/ui/magic-button";
 import { AuroraBackground } from "@/components/ui/aurora-background";
+import { SITE } from "@/config/site";
 
 const AuroraOrb = dynamic(
   () => import("@/components/three/AuroraOrb").then((m) => ({ default: m.AuroraOrb })),
@@ -15,9 +16,9 @@ function OrbFallback() {
   return (
     <div className="flex h-full w-full items-center justify-center">
       <div className="relative h-64 w-64">
-        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-teal/40 to-violet/40 blur-3xl" />
-        <div className="absolute inset-8 rounded-full bg-gradient-to-br from-teal to-violet opacity-70 blur-xl" />
-        <div className="absolute inset-16 rounded-full bg-white/20 backdrop-blur-sm" />
+        <div className="absolute inset-0 rounded-full bg-gradient-to-br from-rose-gold/30 to-violet/30 blur-3xl" />
+        <div className="absolute inset-8 rounded-full bg-gradient-to-br from-rose-gold/60 to-violet/50 blur-xl" />
+        <div className="absolute inset-16 rounded-full bg-white/15 backdrop-blur-sm" />
       </div>
     </div>
   );
@@ -69,7 +70,7 @@ export function Hero() {
             {/* Sub-copy */}
             <motion.p variants={item} className="max-w-lg text-lg leading-relaxed text-muted-foreground">
               Book a secure video consultation with{" "}
-              <strong className="font-semibold text-foreground">Dr. Greeshma Gopinath</strong>
+              <strong className="font-semibold text-foreground">{SITE.doctorName}</strong>
               , specialist in pregnancy, PCOS, infertility, and gynaecology. Premium care from
               the comfort of your home.
             </motion.p>

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Stethoscope } from "lucide-react";
+import { SITE } from "@/config/site";
 
 export default function AuthLayout({
   children,
@@ -31,7 +32,7 @@ export default function AuthLayout({
         <span className="font-display text-xl font-bold">
           Dr.{" "}
           <span className="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">
-            Greeshma
+            {SITE.doctorFirstName}
           </span>
         </span>
       </Link>

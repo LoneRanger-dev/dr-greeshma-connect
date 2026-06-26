@@ -6,6 +6,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { AuroraBackground } from "@/components/ui/aurora-background";
 import { Badge } from "@/components/ui/badge";
 import { MagicButton } from "@/components/ui/magic-button";
+import { SITE, BRAND } from "@/config/site";
 import {
   GraduationCap,
   Award,
@@ -55,14 +56,14 @@ const TIMELINE = [
   {
     year: "2021",
     title: "Launched Telehealth Practice",
-    institution: "Dr. Greeshma Connect",
+    institution: BRAND,
     desc: "Pioneered accessible telehealth OB-GYN care via Google Meet for patients across India.",
   },
   {
     year: "2024",
     title: "8,000+ Patients Served",
     institution: "",
-    desc: "A community of 8,000+ women who have trusted Dr. Greeshma with their most important health journeys.",
+    desc: `A community of 8,000+ women who have trusted ${SITE.shortName} with their most important health journeys.`,
   },
 ];
 
@@ -154,7 +155,7 @@ export default function AboutPage() {
                 <div className="relative aspect-[4/5] w-full overflow-hidden rounded-xl">
                   <Image
                     src="/images/dr-greeshma.jpg"
-                    alt="Dr. Greeshma Gopinath — Obstetrician & Gynecologist"
+                    alt={`${SITE.doctorName} — ${SITE.specialty}`}
                     fill
                     className="object-cover object-top"
                     priority
@@ -162,7 +163,7 @@ export default function AboutPage() {
                   />
                 </div>
                 <div className="px-2 py-4 text-center">
-                  <p className="font-display text-xl font-bold">Dr. Greeshma Gopinath</p>
+                  <p className="font-display text-xl font-bold">{SITE.doctorName}</p>
                   <p className="text-sm text-muted-foreground">MBBS · MS (OBG) · FMAS</p>
                   <div className="mt-3 flex items-center justify-center gap-1.5 text-sm text-muted-foreground">
                     <MapPin className="h-3.5 w-3.5 text-teal" aria-hidden />
@@ -184,9 +185,9 @@ export default function AboutPage() {
                   OB-GYN Specialist
                 </span>
                 <h1 className="font-display mt-2 text-4xl font-bold sm:text-5xl">
-                  Dr. Greeshma{" "}
+                  {SITE.shortName}{" "}
                   <span className="bg-gradient-to-r from-teal to-violet bg-clip-text text-transparent">
-                    Gopinath
+                    {SITE.doctorName.split(" ").at(-1)}
                   </span>
                 </h1>
                 <p className="mt-1 text-lg text-muted-foreground">
@@ -195,7 +196,7 @@ export default function AboutPage() {
               </div>
 
               <p className="leading-relaxed text-foreground/80">
-                Dr. Greeshma Gopinath is a board-certified Obstetrician &amp; Gynecologist with
+                {SITE.doctorName} is a board-certified Obstetrician &amp; Gynecologist with
                 over 15 years of experience in high-risk pregnancies, PCOS management,
                 infertility counselling, and minimally invasive gynaecological surgery. She
                 combines clinical rigour with genuine empathy — taking time to listen, explain,
@@ -203,7 +204,7 @@ export default function AboutPage() {
               </p>
 
               <p className="leading-relaxed text-foreground/80">
-                Having pioneered telehealth OB-GYN care in India since 2021, Dr. Greeshma
+                Having pioneered telehealth OB-GYN care in India since 2021, {SITE.shortName}
                 has helped over 8,000 women access premium specialist care from the comfort of
                 their homes — without compromising on quality, privacy, or personalisation.
               </p>
@@ -363,7 +364,7 @@ export default function AboutPage() {
             Same-day slots available · Instant confirmation · Google Meet
           </p>
           <MagicButton href="/book" size="lg">
-            Book with Dr. Greeshma
+            Book with {SITE.shortName}
           </MagicButton>
         </motion.div>
       </section>
